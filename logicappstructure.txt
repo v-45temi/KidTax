@@ -1,0 +1,147 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Condition": {
+                "actions": {
+                    "Create_an_event": {
+                        "inputs": {
+                            "body": {
+                                "attendees": "teodoramilusheva@gmail.com",
+                                "description": "Сума за плащане: @{float(body('Parse_JSON')?['taxvalue'])} ЛВ.",
+                                "end": "@{getFutureTime(8,'Hour')}",
+                                "location": "София",
+                                "start": "@{getFutureTime(5,'Minute')}",
+                                "summary": "Такса детска градина (Сума за плащане: @{float(body('Parse_JSON')?['taxvalue'])} ЛВ.)"
+                            },
+                            "host": {
+                                "connection": {
+                                    "name": "@parameters('$connections')['googlecalendar']['connectionId']"
+                                }
+                            },
+                            "method": "post",
+                            "path": "/calendars/@{encodeURIComponent('manovadevmailbox@gmail.com')}/events"
+                        },
+                        "runAfter": {},
+                        "type": "ApiConnection"
+                    }
+                },
+                "expression": {
+                    "and": [
+                        {
+                            "greater": [
+                                "@float(body('Parse_JSON')?['taxvalue'])",
+                                0
+                            ]
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Parse_JSON": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "If"
+            },
+            "Initialize_variable": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "taxJson",
+                            "type": "object",
+                            "value": "@body('kidtax')"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "kidtax": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "Parse_JSON": {
+                "inputs": {
+                    "content": "@variables('taxJson')",
+                    "schema": {
+                        "properties": {
+                            "message": {
+                                "type": "string"
+                            },
+                            "taxvalue": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "runAfter": {
+                    "Initialize_variable": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ParseJson"
+            },
+            "kidtax": {
+                "inputs": {
+                    "function": {
+                        "id": "/subscriptions/564c153b-883d-44fd-a5a8-091cdb20cd21/resourceGroups/rs-manova-apps/providers/Microsoft.Web/sites/fa-kidtax-nodejs/functions/kidtax"
+                    },
+                    "method": "GET"
+                },
+                "runAfter": {},
+                "type": "Function"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "parameters": {
+            "$connections": {
+                "defaultValue": {},
+                "type": "Object"
+            }
+        },
+        "triggers": {
+            "Recurrence": {
+                "evaluatedRecurrence": {
+                    "frequency": "Day",
+                    "interval": 1,
+                    "schedule": {
+                        "hours": [
+                            "9"
+                        ],
+                        "minutes": [
+                            0
+                        ]
+                    },
+                    "timeZone": "FLE Standard Time"
+                },
+                "recurrence": {
+                    "frequency": "Day",
+                    "interval": 1,
+                    "schedule": {
+                        "hours": [
+                            "9"
+                        ],
+                        "minutes": [
+                            0
+                        ]
+                    },
+                    "timeZone": "FLE Standard Time"
+                },
+                "type": "Recurrence"
+            }
+        }
+    },
+    "parameters": {
+        "$connections": {
+            "value": {
+                "googlecalendar": {
+                    "connectionId": "/subscriptions/564c153b-883d-44fd-a5a8-091cdb20cd21/resourceGroups/rs-manova-apps/providers/Microsoft.Web/connections/googlecalendar",
+                    "connectionName": "googlecalendar",
+                    "id": "/subscriptions/564c153b-883d-44fd-a5a8-091cdb20cd21/providers/Microsoft.Web/locations/westeurope/managedApis/googlecalendar"
+                }
+            }
+        }
+    }
+}
